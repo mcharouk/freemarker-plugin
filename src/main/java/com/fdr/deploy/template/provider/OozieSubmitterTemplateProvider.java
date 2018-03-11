@@ -1,35 +1,50 @@
-package com.fdr.deploy.template.handler;
+package com.fdr.deploy.template.provider;
 
 import com.fdr.deploy.template.bean.BatchParameter;
-import com.fdr.deploy.utils.PlaceholderUtils;
-import com.fdr.deploy.utils.TemplateUtils;
+import com.fdr.deploy.template.bean.SimpleTemplate;
+import com.fdr.deploy.template.bean.Template;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.maven.plugin.MojoFailureException;
 
-import java.io.Writer;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @Slf4j
-public class OozieSubmitterTemplateHandler {
+public class OozieSubmitterTemplateProvider implements TemplateProvider {
+
+    private final String mode;
+    private final String applicationName;
+    private final String mainClassName;
+    private final String[] batchParameters;
 
     private final String templateName = "oozie-submit.ftl";
+    private final String outputFileName = "oozie-submit.sh";
 
-    public void buildFile(String mode, String applicationName, String mainClassName, String[] batchParameters, Writer writer) throws MojoFailureException {
+    public OozieSubmitterTemplateProvider(String mode, String applicationName, String mainClassName, String[] batchParameters) {
+        this.mode = mode;
+        this.applicationName = applicationName;
+        this.mainClassName = mainClassName;
+        this.batchParameters = batchParameters;
+    }
+
+    @Override
+    public Template getTemplate() {
         Map<String, Object> templateParameter = initializeParameters(mode, applicationName, mainClassName, batchParameters);
-        TemplateUtils.writeTemplateResult(templateName, templateParameter, writer);
+        return new SimpleTemplate(templateName, outputFileName, templateParameter);
     }
 
     private Map<String, Object> initializeParameters(String mode, String applicationName, String mainClassName, String[] batchParameters) {
 
         Map<String, Object> input = new HashMap<>();
 
-        input.put("applicationName", PlaceholderUtils.getApplicationPlaceholder(applicationName));
+        String applicationNamePlaceholder = getApplicationPlaceholder(applicationName);
+        log.info(String.format("creating application name placeholder : %s", applicationNamePlaceholder));
+        input.put("applicationName", applicationNamePlaceholder);
+
         input.put("mainClassName", mainClassName);
 
         initBatchParameters(batchParameters, input);
-        input.put("environment", PlaceholderUtils.getEnvironmentPlaceholder(mode));
+        input.put("environment", getEnvironmentPlaceholder(mode));
 
         return input;
     }

@@ -1,8 +1,9 @@
 package com.fdr.deploy.mojo;
 
-import com.fdr.deploy.sink.DeployFile;
-import com.fdr.deploy.template.handler.OozieSubmitterTemplateHandler;
-import com.fdr.deploy.utils.WriterUtils;
+import com.fdr.deploy.template.provider.TemplateProvider;
+import com.fdr.deploy.template.provider.TemplateProviderFactory;
+import com.fdr.deploy.template.writer.TemplateFileProcessor;
+import com.fdr.deploy.template.writer.TemplateProcessor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -35,11 +36,11 @@ public class GenerateDeployFilesMojo extends AbstractMojo {
         this.applicationName = validateApplicationName(applicationName);
         this.mainClassName = validateMainClassName(mainClassName);
 
-        new OozieSubmitterTemplateHandler().buildFile(mode,
-                applicationName,
-                mainClassName,
-                batchParameters,
-                WriterUtils.getFileWriter(DeployFile.OOZIE_SUBMIT));
+        TemplateProcessor templateProcessor = new TemplateFileProcessor();
+        TemplateProviderFactory templateProviderFactory = new TemplateProviderFactory();
+
+        TemplateProvider oozieSubmitterTemplateProvider = templateProviderFactory.createOozieSubmitterTemplateProvider(mode, applicationName, mainClassName, batchParameters);
+        templateProcessor.process(oozieSubmitterTemplateProvider.getTemplate());
     }
 
     private String validateApplicationName(String applicationName) throws MojoExecutionException {
@@ -51,6 +52,5 @@ public class GenerateDeployFilesMojo extends AbstractMojo {
         return Optional.ofNullable(mainClassName)
                 .orElseThrow(() -> new MojoExecutionException("property main class name should be specified"));
     }
-
 
 }

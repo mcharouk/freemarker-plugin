@@ -1,6 +1,6 @@
-package com.fdr.deploy.utils;
+package com.fdr.deploy.template.writer;
 
-import com.fdr.deploy.sink.DeployFile;
+import com.fdr.deploy.template.bean.Template;
 import org.apache.commons.io.FileUtils;
 import org.apache.maven.plugin.MojoFailureException;
 
@@ -9,20 +9,22 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
 
-public class WriterUtils {
+public class TemplateFileProcessor implements TemplateProcessor {
 
     private static final String rootFolder = "target/fdr/deploy";
 
-    public static void closeWriter(String templateName, Writer writer) throws MojoFailureException {
+    @Override
+    public void closeWriter(Template template, Writer writer) throws MojoFailureException {
         try {
             writer.close();
         } catch (IOException e) {
-            throw new MojoFailureException(String.format("Could not close writer for template %s", templateName), e);
+            throw new MojoFailureException(String.format("Could not close writer for template %s", template.getOutputFileName()), e);
         }
     }
 
-    public static Writer getFileWriter(DeployFile deployFile) throws MojoFailureException {
-        String fileLocation = String.format("%s/%s", rootFolder, deployFile.getFileName());
+    @Override
+    public Writer getWriter(Template template) throws MojoFailureException {
+        String fileLocation = String.format("%s/%s", rootFolder, template.getOutputFileName());
         File outputFile = createFile(fileLocation);
 
         try {
@@ -32,7 +34,7 @@ public class WriterUtils {
         }
     }
 
-    private static File createFile(String fileLocation) throws MojoFailureException {
+    private File createFile(String fileLocation) throws MojoFailureException {
         File outputFile = new File(fileLocation);
 
         try {
@@ -42,4 +44,5 @@ public class WriterUtils {
         }
         return outputFile;
     }
+
 }
